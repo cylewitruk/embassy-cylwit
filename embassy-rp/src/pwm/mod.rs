@@ -1,6 +1,7 @@
 //! Pulse Width Modulation (PWM)
 
 use embassy_hal_internal::{into_ref, Peripheral, PeripheralRef};
+use embedded_hal_1::pwm::SetDutyCycle;
 use fixed::traits::ToFixed;
 use fixed::FixedU16;
 use pac::pwm::regs::{ChDiv, Intr};
@@ -310,6 +311,29 @@ impl<'d, T: Slice> Pwm<'d, T> {
     #[inline]
     fn bit(&self) -> u32 {
         1 << self.inner.number() as usize
+    }
+}
+
+impl<'d, T> embedded_hal_1::pwm::ErrorType for Pwm<'d, T>
+where
+    T: Slice,
+{
+    type Error = core::convert::Infallible;
+}
+
+impl<'d, T> SetDutyCycle for Pwm<'d, T>
+where
+    T: Slice,
+{
+    fn max_duty_cycle(&self) -> u16 {
+        0xffff
+    }
+    fn set_duty_cycle(&mut self, duty: u16) -> Result<(), Self::Error> {
+        let mut config = Config::default();
+        config.compare_a = duty;
+        config.compare_b = duty;
+        self.set_config(&config);
+        Ok(())
     }
 }
 
